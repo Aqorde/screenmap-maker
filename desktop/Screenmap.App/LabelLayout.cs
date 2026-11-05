@@ -18,7 +18,8 @@ internal static class LabelLayout {
     }
     private static SKRect Frame(NativeScene s,int id,float w,float h){
         var lines=s.Lines.Where(l=>l.Layer==1&&l.Kind==id).ToArray();
-        return new((float)lines.Min(l=>Math.Min(l.X1,l.X2))*w,(float)lines.Min(l=>Math.Min(l.Y1,l.Y2))*h,(float)lines.Max(l=>Math.Max(l.X1,l.X2))*w,(float)lines.Max(l=>Math.Max(l.Y1,l.Y2))*h);
+        return new((float)Math.Clamp(lines.Min(l=>Math.Min(l.X1,l.X2)),0,1)*w,(float)lines.Min(l=>Math.Min(l.Y1,l.Y2))*h,
+            (float)Math.Clamp(lines.Max(l=>Math.Max(l.X1,l.X2)),0,1)*w,(float)lines.Max(l=>Math.Max(l.Y1,l.Y2))*h);
     }
     private static IEnumerable<SKPoint> Candidates(SKRect band,SKRect glyph,SKPoint preferred,float step){
         float minX=band.Left+glyph.Width/2,maxX=band.Right-glyph.Width/2,minY=band.Top+glyph.Height/2,maxY=band.Bottom-glyph.Height/2;
@@ -53,14 +54,16 @@ internal static class LabelLayout {
         }
         foreach(var label in scene.Labels.Where(l=>l.Layer==1&&Enabled(l)).OrderBy(l=>l.Id)){
             var outer=label.Id==0?new SKRect(0,0,w,h):Frame(scene,label.Id-1,w,h);var inner=Frame(scene,label.Id,w,h);
-            SKRect[] bands=[new(outer.Left,outer.Top,outer.Right,inner.Top),new(outer.Left,inner.Bottom,outer.Right,outer.Bottom),new(outer.Left,inner.Top,inner.Left,inner.Bottom),new(inner.Right,inner.Top,outer.Right,inner.Bottom)];
+            float left=Math.Clamp(inner.Left,outer.Left,outer.Right);
+            float right=Math.Clamp(inner.Right,outer.Left,outer.Right);
+            SKRect[] bands=[new(outer.Left,outer.Top,outer.Right,inner.Top),new(outer.Left,inner.Bottom,outer.Right,outer.Bottom),new(outer.Left,inner.Top,left,inner.Bottom),new(right,inner.Top,outer.Right,inner.Bottom)];
             var preferred=new SKPoint((float)label.X*w,(float)label.Y*h);float initial=Size(d,label,scale);
             PlacedLabel? chosen=null;
             bool Free(SKRect box)=>!result.Any(p=>Overlap(box,p.Bounds,gap));
             // Prefer the original band and size. Only reduce Depth, never zone IDs.
             for(float size=initial;size>=Math.Min(initial,5*scale)-.001f&&chosen is null;size-=Math.Max(scale,(initial-5*scale)/5)){
                 var glyph=Glyph(face,label.Text,size);
-                foreach(var band in bands.OrderBy(b=>DistanceTo(b,preferred))){
+                foreach(var band in bands.Where(b=>b.Width>0&&b.Height>0).OrderBy(b=>DistanceTo(b,preferred))){
                     foreach(var center in Candidates(band,glyph,preferred,6*scale)){
                         var candidate=At(label,glyph,size,center);
                         if(Contains(band,candidate.Bounds)&&Free(candidate.Bounds)){chosen=candidate;break;}

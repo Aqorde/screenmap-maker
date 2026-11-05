@@ -26,21 +26,56 @@ void cases(){
   auto circles=sm_circles(s.get(),&n);check(n==1,"one center circle");auto circle=circles[0];
   check(close(circle.rx*p,circle.ry*q),"pixel circle");
   auto ls=sm_lines(s.get(),&n);int depth=0,pgfa=0;
+  const double far_extent=sm_config(s.get())->radius*1.05;
+  const bool fits=x-far_extent>=0&&x+far_extent<=1;
   for(uint32_t i=0;i<n;i++){auto l=ls[i];check(std::isfinite(l.x1)&&std::isfinite(l.y1)&&std::isfinite(l.x2)&&std::isfinite(l.y2),"finite");
-    check(l.x1>=0&&l.x1<=1&&l.y1>=0&&l.y1<=1&&l.x2>=0&&l.x2<=1&&l.y2>=0&&l.y2<=1,"inside");
+    if(fits||l.layer==SM_PRIMITIVE||l.layer==SM_LEVELS||(l.layer==SM_PGFA&&l.kind==SM_PGFA_OPEN_RAY))
+      check(l.x1>=0&&l.x1<=1&&l.y1>=0&&l.y1<=1&&l.x2>=0&&l.x2<=1&&l.y2>=0&&l.y2<=1,"visible geometry stays inside");
     if(l.layer==SM_DEPTH){depth++;
       if(l.kind==0)check(l.x1>0&&l.y1>0&&l.x1<1&&l.y1<1,"D0 inset");}
     if(l.layer==SM_PGFA)pgfa++;
   }
   check(depth==36&&pgfa>0,"all perspective layers");
   for(int kind=0;kind<8;kind++){
-    double left=1,top=1,right=0,bottom=0;
+    double left=std::numeric_limits<double>::infinity(),top=left,right=-left,bottom=-left;
     for(uint32_t i=0;i<n;i++)if(ls[i].layer==SM_DEPTH&&ls[i].kind==kind){left=std::min({left,ls[i].x1,ls[i].x2});right=std::max({right,ls[i].x1,ls[i].x2});top=std::min({top,ls[i].y1,ls[i].y2});bottom=std::max({bottom,ls[i].y1,ls[i].y2});}
     check(close(right-left,bottom-top),"every depth rectangle retains selected AR");
     if(kind==7){check(left<=circle.x-circle.rx&&right>=circle.x+circle.rx,"D7 encloses circle x");check(top<=circle.y-circle.ry&&bottom>=circle.y+circle.ry,"D7 encloses circle y");}
   }
   auto labels=sm_labels(s.get(),&n);int dlabels=0;for(uint32_t i=0;i<n;i++)if(labels[i].layer==SM_DEPTH){dlabels++;check(labels[i].font_cap>0,"depth band font cap");}
   check(dlabels==8,"D0-D7 captions");
+ }
+}
+void open_perspective(){
+ auto c=config();
+ c.center_x=.56;c.center_y=.60;c.radius=.024;c.pgfa_subdivisions=2;
+ const int columns=8;
+ for(double x:{.56,-.35,1.35}){
+  c.center_x=x;auto s=build(c);auto projected=sm_config(s.get());
+  check(close(projected->center_x,x),"horizontal perspective position retained outside frame");
+  check(close(projected->center_y,.60)&&close(projected->radius,.024),"moving horizontally preserves horizon and radius");
+  uint32_t n=0;auto lines=sm_lines(s.get(),&n);
+  for(bool top:{true,false})for(double depth:{.25,.5,.75,.9}){
+   const double radius=projected->radius*1.05;
+   const double y=std::lerp(top?.055:.945,c.center_y+(top?-radius:radius),depth);
+   const double pitch=std::lerp(.89,2*radius,depth)/columns;
+   std::vector<double> xs;
+   for(uint32_t i=0;i<n;i++){
+    const auto& l=lines[i];
+    if(l.layer!=SM_PGFA||(l.kind!=0&&l.kind!=SM_PGFA_OPEN_RAY)||l.y1==l.y2)continue;
+    if(y<std::min(l.y1,l.y2)||y>std::max(l.y1,l.y2))continue;
+    const double at=std::lerp(l.x1,l.x2,(y-l.y1)/(l.y2-l.y1));
+    if(at>0&&at<1)xs.push_back(at);
+   }
+   std::sort(xs.begin(),xs.end());
+   check(xs.size()>5&&xs.front()<pitch+1e-9&&1-xs.back()<pitch+1e-9,"open PGFA covers full width at every sampled depth");
+   for(size_t i=1;i<xs.size();i++)check(close(xs[i]-xs[i-1],pitch),"uniform PGFA pitch across closed-to-open seam");
+  }
+  auto regions=sm_regions(s.get(),&n);double sum=0;
+  for(uint32_t i=0;i<n;i++)sum+=area(regions[i]);
+  check(n==32&&close(sum,1),"off-frame perspective keeps the zone partition");
+  if(x<0||x>1)for(double u:{.01,.25,.75,.99})for(double v:{.01,.25,.75,.99})
+   check(sm_hit_test(s.get(),u,v)>0,"zone hit testing works with perspective outside the image");
  }
 }
 void coupled(){
@@ -72,4 +107,4 @@ void coupled(){
  for(int i=0;i<1000;i++){auto s=build(config());check(sm_hit_test(s.get(),.5,.5)==1,"lifetime");}
 }
 }
-int main(){try{check(SM_ABI==2&&sm_abi_version()==2,"ABI");cases();coupled();std::cout<<"PASS: "<<assertions<<" assertions\n";return 0;}catch(const std::exception&e){std::cerr<<e.what()<<'\n';return 1;}}
+int main(){try{check(SM_ABI==2&&sm_abi_version()==2,"ABI");cases();open_perspective();coupled();std::cout<<"PASS: "<<assertions<<" assertions\n";return 0;}catch(const std::exception&e){std::cerr<<e.what()<<'\n';return 1;}}

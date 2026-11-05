@@ -1,6 +1,6 @@
 <a id="top"></a>
 # aqorde ScreenMap Maker
-**Framing and composition guide · version 0.5.9b (beta)**
+**Framing and composition guide · version 0.5.10b (beta)**
 A practical guide from your first grid to a reference for AI image and video generation.
 
 ## Contents
@@ -67,7 +67,7 @@ Hover over a layer title for an explanation. The mouse wheel adjusts a hovered s
 ## Perspective and radius
 Central zone **1** is the vanishing point. The inner and outer sectors, vertical levels, depth frames and PGFA adapt to its position.
 ### Move the centre
-Enable **Move perspective**, press inside the frame and drag with the left mouse button. Release to finish. Disable the action afterwards to avoid accidental changes.
+Enable **Move perspective**, press inside the frame and drag with the left mouse button. Drag past either side or use **Perspective X** to move the point outside the frame along the horizon. The edge arrow is draggable. Use **Perspective Reset** to centre the point. Release to finish a drag.
 **Escape** cancels the active drag. **Ctrl+Z** after releasing the mouse undoes the entire gesture.
 ### Adjust the radius
 Use the blue handle to the right of the circle or the Radius slider. The circle stays round for every aspect ratio. Radius is measured relative to the short frame side and drives the size of D7 and the other guide geometry.

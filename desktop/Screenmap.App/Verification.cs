@@ -76,6 +76,29 @@ internal static class Verification {
         Check(vm.Doc.Radius>radius+.01,"Radius handle expands D7");vm.Undo();
         window.MouseDown(center,MouseButton.Left);window.MouseMove(center+new Vector(55,20));window.KeyPress(Key.Escape,RawInputModifiers.None,PhysicalKey.Escape,null);window.KeyRelease(Key.Escape,RawInputModifiers.None,PhysicalKey.Escape,null);window.MouseUp(center+new Vector(55,20),MouseButton.Left);
         Check(Math.Abs(vm.Doc.CenterX-initial)<1e-8,"Escape restores gesture and releases capture");
+        var outside=window.View.TranslatePoint(new Point(window.View.Frame.Left-14,window.View.Frame.Center.Y+20),window)!.Value;
+        window.MouseDown(center,MouseButton.Left);window.MouseMove(outside);window.MouseUp(outside,MouseButton.Left);
+        Check(vm.Doc.CenterX<0&&vm.Doc.CenterY==.5,"perspective drag goes outside and keeps its horizon");
+        var edgeMarker=window.View.TranslatePoint(window.View.PerspectiveMarker,window)!.Value;
+        double beforeEdgeDrag=vm.Doc.CenterX;
+        window.MouseDown(edgeMarker,MouseButton.Left);window.MouseMove(edgeMarker-new Vector(8,0));window.MouseUp(edgeMarker-new Vector(8,0),MouseButton.Left);
+        Check(vm.Doc.CenterX<beforeEdgeDrag,"off-frame marker can be dragged without jumping to the edge");
+        var sidebar=window.FindControl<StackPanel>("Sidebar")!;
+        var perspectiveX=sidebar.Children.OfType<Slider>().Single(s=>s.Minimum==-1&&s.Maximum==2);
+        perspectiveX.Value=1.35;
+        Check(vm.Doc.CenterX==1.35&&vm.Doc.CenterY==.5,"Perspective X moves the point right of the frame along the horizon");
+        var offFrameProject=Path.Combine(output,"off-frame.screenmap");StateStore.SaveProject(offFrameProject,vm);
+        using(var reopenedPerspective=new Editor()){
+            StateStore.OpenProject(offFrameProject,reopenedPerspective);
+            Check(reopenedPerspective.Doc.CenterX==1.35,"off-frame perspective round-trips through a project");
+        }
+        var reset=sidebar.Children.OfType<Button>().Single(b=>Equals(b.Content,"Perspective Reset"));
+        var resetRadius=vm.Doc.Radius;
+        reset.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+        Check(vm.Doc.CenterX==.5&&vm.Doc.CenterY==.5&&vm.Doc.Radius==resetRadius,"Perspective Reset button centres the point and retains radius");
+        vm.Undo();
+        Check(vm.Doc.CenterX==1.35,"Perspective Reset can be undone");
+        vm.Redo();
         var settings=window.CreateSettingsForRender();settings.SelectPage(1);settings.Show(window);
         await Snapshot(settings,Path.Combine(output,"settings-appearance.png"));
         settings.Height=920;await Snapshot(settings,Path.Combine(output,"settings-appearance-tall.png"));

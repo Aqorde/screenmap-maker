@@ -7,7 +7,8 @@ A Windows tool for planning shots and creating composition references for image 
 ![ScreenMap Maker with perspective, depth and zone guides](docs/images/screenshot.png)
 
 - Compose shots with screen zones, level bands and depth planes D0–D7.
-- Move the perspective centre and switch between a boxed grid and open sky and ground planes.
+- Move the perspective point beyond the image horizontally, or centre it again with **Perspective Reset**.
+- Switch between a boxed grid and open sky and ground planes with evenly spaced projected columns.
 - Place an image behind the guides and export transparent PNG or SVG.
 - Export a matching prompt template in English or Russian.
 

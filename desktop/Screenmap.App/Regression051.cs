@@ -134,6 +134,16 @@ internal static class Regression051 {
                 $"PGFA open diagonals enter both planes from image edge {edge}");
         }
         await Capture("sky-and-ground");
+        vm.PerspectiveEditing=true;
+        vm.Update(d=>{
+            d.P=16;d.Q=9;d.CenterX=.56;d.CenterY=.60;d.Radius=.024;d.PgfaDensity=2;
+            d.Layers[3].Visible=d.Layers[4].Visible=true;
+        });
+        await Capture("pgfa-open-uniform");
+        vm.Update(d=>d.CenterX=-.35);
+        await Capture("perspective-off-left");
+        vm.Update(d=>d.CenterX=1.35);
+        await Capture("perspective-off-right");
         Reset();vm.Update(d=>{d.Mode=1;d.PrimitiveCircle=true;d.PrimitiveHollow=true;d.PrimitiveRadius=.19;d.P=1;d.Q=1;d.SetPrimitiveStep(2);foreach(var l in d.Layers)l.Visible=false;d.Layers[3].Visible=true;d.Layers[3].Opacity=1;d.Layers[3].FontSize=36;d.Layers[4].Visible=true;d.Layers[4].Opacity=1;});
         await Capture("hollow-visible-numbers");
         using(var png=SKBitmap.Decode(Path.Combine(dir,"hollow-visible-numbers-grid.png"))){

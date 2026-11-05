@@ -57,7 +57,7 @@ internal static class RenderEngine {
             if(!bounded&&layer==1&&!horizontal&&line.Kind!=NativeLine.DepthRay)continue;
             yield return new(line.X1,line.Y1,line.X2,line.Y2,false);
             if(layer!=1||bounded||!horizontal||line.Kind==NativeLine.DepthRay)continue;
-            double left=Math.Min(line.X1,line.X2),right=Math.Max(line.X1,line.X2);
+            double left=Math.Clamp(Math.Min(line.X1,line.X2),0,1),right=Math.Clamp(Math.Max(line.X1,line.X2),0,1);
             if(left>0)yield return new(0,line.Y1,left,line.Y1,true);
             if(right<1)yield return new(right,line.Y1,1,line.Y1,true);
         }

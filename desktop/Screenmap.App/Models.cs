@@ -73,7 +73,7 @@ public sealed class Preferences {
     public double BaseSize {get;set;}=14;
     public bool Compact {get;set;}
     public string LayerDisplay {get;set;}="Both";
-    public List<string> QuickMenu {get;set;}=["perspective","boundDepth"];
+    public List<string> QuickMenu {get;set;}=["perspective","boundDepth","perspectiveReset"];
     public List<ScreenmapTheme> ScreenmapThemes {get;set;}=[];
     public string SelectedScreenmapTheme {get;set;}="Dark";
 }

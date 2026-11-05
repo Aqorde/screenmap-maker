@@ -37,7 +37,10 @@ double knot(double v,double left,double center,double right) {
 }
 Point map(Point p,const SmConfig& c) {
     auto f=far_box(c);
-    return {knot(p.x,f.l/2,c.center_x,(1+f.r)/2),knot(p.y,f.t/2,c.center_y,(1+f.b)/2)};
+    // Zone addresses partition the image even when the perspective point is off-screen.
+    const double x=std::clamp(c.center_x,.08,.92);
+    const double rx=std::min({c.radius*1.05,x-.06,.94-x});
+    return {knot(p.x,(x-rx)/2,x,(1+x+rx)/2),knot(p.y,f.t/2,c.center_y,(1+f.b)/2)};
 }
 void line(SmScene& s, Point a, Point b, int layer, int kind=0) {
     s.lines.push_back({a.x,a.y,b.x,b.y,layer,kind});
@@ -99,7 +102,8 @@ void zones(SmScene& s) {
     }
     const double aspect=static_cast<double>(s.config.aspect_p)/s.config.aspect_q;
     s.circles.push_back({s.config.center_x,s.config.center_y,s.config.radius*std::min(1.0,1/aspect),s.config.radius*std::min(1.0,aspect),SM_PRIMITIVE,0});
-    label(s,{s.config.center_x,s.config.center_y},SM_ZONES,1,"1",s.config.radius*2*720*.70);
+    if(s.config.center_x>=0&&s.config.center_x<=1)
+        label(s,{s.config.center_x,s.config.center_y},SM_ZONES,1,"1",s.config.radius*2*720*.70);
 }
 void levels(SmScene& s) {
     const auto f=far_box(s.config);
@@ -121,27 +125,31 @@ void frame(SmScene& s,Box b,int layer,int kind=0) {
 void open_pgfa_rays(SmScene& s,Box near,Box far,int columns) {
     const double near_step=(near.r-near.l)/columns;
     const double far_step=(far.r-far.l)/columns;
-    for(bool left:{true,false}) {
-        const double edge=left?0:1;
-        const double direction=left?-1:1;
-        const double near_side=left?near.l:near.r;
-        const double far_side=left?far.l:far.r;
-        const int visible_columns=static_cast<int>(std::abs(edge-far_side)/far_step);
-        // Keep the original projected column pitch and sample fewer columns far
-        // to the sides, where a small D7 would otherwise produce hundreds of rays.
-        const int stride=std::max(1,(visible_columns+columns-1)/columns);
-        for(int column=1;column<=visible_columns;column+=stride) {
-            const double near_x=near_side+direction*column*near_step;
-            const double far_x=far_side+direction*column*far_step;
-            if(far_x<=0||far_x>=1)continue;
-            const bool clipped=near_x<0||near_x>1;
-            const double entry=clipped?(edge-near_x)/(far_x-near_x):0;
-            for(bool top:{true,false}) {
-                const double near_y=top?near.t:near.b;
-                const double far_y=top?far.t:far.b;
-                line(s,{clipped?edge:near_x,std::lerp(near_y,far_y,entry)},
-                    {far_x,far_y},SM_PGFA,SM_PGFA_OPEN_RAY);
-            }
+    // Extend the same column lattice through the open sides. Clip after projection,
+    // so the first exterior cell has the same pitch as the last interior cell.
+    const int first=static_cast<int>(std::ceil(std::min(-near.l/near_step,-far.l/far_step)));
+    const int last=static_cast<int>(std::floor(std::max((1-near.l)/near_step,(1-far.l)/far_step)));
+    for(int column=first;column<=last;++column) {
+        if(column>=0&&column<=columns)continue;
+        const double near_x=near.l+column*near_step;
+        const double far_x=far.l+column*far_step;
+        if(std::max(near_x,far_x)<=0||std::min(near_x,far_x)>=1)continue;
+        double entry=0,exit=1;
+        if(near_x!=far_x) {
+            const double t0=-near_x/(far_x-near_x);
+            const double t1=(1-near_x)/(far_x-near_x);
+            entry=std::max(0.0,std::min(t0,t1));
+            exit=std::min(1.0,std::max(t0,t1));
+        }
+        if(entry>=exit)continue;
+        const double start_x=entry>0?(far_x>near_x?0:1):near_x;
+        const double end_x=exit<1?(far_x>near_x?1:0):far_x;
+        for(bool top:{true,false}) {
+            const double near_y=top?near.t:near.b;
+            const double far_y=top?far.t:far.b;
+            line(s,{start_x,std::lerp(near_y,far_y,entry)},
+                {end_x,std::lerp(near_y,far_y,exit)},
+                SM_PGFA,SM_PGFA_OPEN_RAY);
         }
     }
 }
@@ -207,8 +215,8 @@ SmConfig validate(const SmConfig* c) {
     const auto max_cols=static_cast<uint32_t>(std::round(16.0*v.aspect_p/p));
     const auto max_rows=static_cast<uint32_t>(std::round(16.0*v.aspect_q/p));
     if(v.density<1||v.density>max_cols||v.primitive_rows<1||v.primitive_rows>max_rows||v.pgfa_subdivisions<1||v.pgfa_subdivisions>6) throw std::invalid_argument("Grid density outside supported range");
-    v.center_x=std::clamp(v.center_x,.08,.92);v.center_y=std::clamp(v.center_y,.08,.92);
-    double limit=std::min({v.center_x-.06,.94-v.center_x,v.center_y-.06,.94-v.center_y})/1.05;
+    v.center_x=std::clamp(v.center_x,-1.0,2.0);v.center_y=std::clamp(v.center_y,.08,.92);
+    const double limit=std::min(v.center_y-.06,.94-v.center_y)/1.05;
     v.radius=std::clamp(v.radius,.006,std::min(.28,limit));
     v.depth_font=std::clamp(v.depth_font,8.0,72.0);
     v.primitive_radius=std::clamp(v.primitive_radius,.005,.2);

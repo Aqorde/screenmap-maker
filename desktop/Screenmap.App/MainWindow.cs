@@ -67,6 +67,7 @@ public sealed partial class MainWindow:Window {
         Add("export","Export…","Экспорт…",OpenExport);Add("settings","Settings…","Настройки…",OpenSettings);
         Add("undo","Undo","Отменить",Editor.Undo);Add("redo","Redo","Повторить",Editor.Redo);
         Add("perspective","Move perspective","Изменить перспективу",()=>{if(Editor.Doc.Mode!=0)return;Editor.PerspectiveEditing=!Editor.PerspectiveEditing;Editor.Notify();},()=>Editor.Doc.Mode==0&&Editor.PerspectiveEditing,()=>Editor.Doc.Mode==0);
+        Add("perspectiveReset","Perspective Reset","Сброс перспективы",ResetPerspective,enabled:()=>Editor.Doc.Mode==0);
         Add("planePerspective","Perspective","Перспектива",()=>Editor.Update(d=>d.Mode=0),()=>Editor.Doc.Mode==0);
         Add("planePrimitive","Primitive","Простая сетка",()=>Editor.Update(d=>d.Mode=1),()=>Editor.Doc.Mode==1);
         Add("ar169","16:9","16:9",()=>SetAspect(16,9),()=>Math.Max(Editor.Doc.P,Editor.Doc.Q)==16);
@@ -102,6 +103,7 @@ public sealed partial class MainWindow:Window {
         Add("documentation","Documentation","Документация",Documentation);
         Add("about","About","О программе",()=>new AboutWindow(Editor).Show(this));
     }
+    private void ResetPerspective()=>Editor.Update(d=>{d.CenterX=.5;d.CenterY=.5;});
     private void SetAspect(int p,int q){
         bool portrait=Editor.Doc.P<Editor.Doc.Q;
         Editor.Update(d=>{d.P=portrait?Math.Min(p,q):Math.Max(p,q);d.Q=portrait?Math.Max(p,q):Math.Min(p,q);});
@@ -116,7 +118,7 @@ public sealed partial class MainWindow:Window {
         var plane=new MenuItem{Header=L("Plane","Плоскость"),ItemsSource=new[]{MenuAction("planePerspective"),MenuAction("planePrimitive")}};
         var aspect=new MenuItem{Header=L("Aspect ratio","Соотношение сторон"),ItemsSource=new[]{MenuAction("ar169"),MenuAction("ar34"),MenuAction("ar11")}};
         var orientation=new MenuItem{Header=L("Orientation","Ориентация"),ItemsSource=new[]{MenuAction("portrait"),MenuAction("landscape")}};
-        var edit=new MenuItem{Header=L("_Edit","_Правка"),ItemsSource=new object[]{MenuAction("undo"),MenuAction("redo"),new Separator(),plane,aspect,orientation}};
+        var edit=new MenuItem{Header=L("_Edit","_Правка"),ItemsSource=new object[]{MenuAction("undo"),MenuAction("redo"),new Separator(),plane,aspect,orientation,MenuAction("perspectiveReset")}};
         var help=new MenuItem{Header=L("_Help","_Помощь"),ItemsSource=new[]{MenuAction("documentation"),MenuAction("about")}};
         this.FindControl<Menu>("MainMenu")!.ItemsSource=new[]{file,edit,help};
     }
@@ -144,7 +146,11 @@ public sealed partial class MainWindow:Window {
             refreshers.Add(()=>{var style=Editor.Doc.Layers[n];eye.IsChecked=style.Visible;eye.Content=UI.Eye(style.Visible);caption.IsChecked=style.Labels;opacity.Value=style.Opacity;});
         }
         panel.Children.Add(UI.Heading(Editor.Doc.Mode==0?L("Perspective","Перспектива"):L("Primitive","Простая сетка")));
-        if(Editor.Doc.Mode==0)Slider(panel,L("Radius","Радиус"),.006,.28,()=>Editor.Doc.Radius,v=>Editor.Update(d=>d.Radius=v));
+        if(Editor.Doc.Mode==0){
+            Slider(panel,L("Perspective X","Перспектива X"),-1,2,()=>Editor.Doc.CenterX,v=>Editor.Update(d=>d.CenterX=v));
+            panel.Children.Add(UI.Button(L("Perspective Reset","Сброс перспективы"),ResetPerspective));
+            Slider(panel,L("Radius","Радиус"),.006,.28,()=>Editor.Doc.Radius,v=>Editor.Update(d=>d.Radius=v));
+        }
         else{
             Slider(panel,L("Density","Плотность"),0,Editor.Doc.PrimitiveSteps().Length-1,()=>Editor.Doc.PrimitiveStep,v=>Editor.Update(d=>d.SetPrimitiveStep((int)v)),true,()=>{var s=Editor.Doc.PrimitiveShape();return $"{s.Columns} × {s.Rows}";});
             var center=UI.Check(L("Centre point","Центральная точка"),Editor.Doc.PrimitiveCircle,v=>{if(!refreshing)Editor.Update(d=>d.PrimitiveCircle=v);});panel.Children.Add(center);refreshers.Add(()=>center.IsChecked=Editor.Doc.PrimitiveCircle);
