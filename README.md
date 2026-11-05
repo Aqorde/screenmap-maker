@@ -4,7 +4,7 @@ A Windows tool for planning shots and creating composition references for image 
 
 [Windows downloads](https://github.com/Aqorde/screenmap-maker/releases) · [По-русски](README-RU.md) · [MIT license](LICENSE.txt)
 
-![ScreenMap Maker with open sky and ground grids](docs/images/sky-and-ground.png)
+![ScreenMap Maker with perspective, depth and zone guides](docs/images/screenshot.png)
 
 - Compose shots with screen zones, level bands and depth planes D0–D7.
 - Move the perspective centre and switch between a boxed grid and open sky and ground planes.

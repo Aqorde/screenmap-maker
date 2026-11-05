@@ -24,7 +24,12 @@ internal static class Regression052 {
             Check(Fits(message,message.Message),"short message remains inside window "+suffix);message.Close();
             var about=new AboutWindow(vm);about.Show(window);await Verification.Snapshot(about,Path.Combine(dir,"about-"+suffix+".png"));
             Check(!about.CanResize&&about.ClientSize.Width==540&&about.ClientSize.Height is >=320 and <=410,"About fits compact reference "+suffix);
-            var description=about.GetVisualDescendants().OfType<TextBlock>().Last();Check(Fits(about,description),"About description fits fixed window "+suffix);about.Close();
+            var description=about.GetVisualDescendants().OfType<TextBlock>().Single(t=>t.Text?.StartsWith("Инструмент построения сеток")==true);
+            Check(Fits(about,description),"About description fits fixed window "+suffix);
+            var github=about.GetVisualDescendants().OfType<HyperlinkButton>().Single();
+            Check(Fits(about,github)&&github.IsEffectivelyEnabled&&github.NavigateUri?.AbsoluteUri=="https://github.com/Aqorde/screenmap-maker",
+                "About project hyperlink fits the window and targets the public repository "+suffix);
+            about.Close();
             await Verification.Snapshot(window,Path.Combine(dir,"main-"+suffix+".png"));
             StateStore.Atomic(Path.Combine(output,"configs","polish-"+suffix+".json"),JsonSerializer.SerializeToUtf8Bytes(new SessionState{Document=vm.Doc,Preferences=vm.Prefs},StateStore.Json));
             var settings=window.CreateSettingsForRender();settings.SelectPage(1);settings.Show(window);await Verification.Snapshot(settings,Path.Combine(dir,"settings-"+suffix+".png"));

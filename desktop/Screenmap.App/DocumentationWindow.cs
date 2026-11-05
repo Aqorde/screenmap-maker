@@ -104,7 +104,18 @@ internal sealed class AboutWindow:FloatingWindow {
         var version=UI.Text("v"+Product.Version,18);version.HorizontalAlignment=HorizontalAlignment.Center;
         var text=UI.Text(UI.L(vm,"Framing and composition grid tool for AI image and video generation.","Инструмент построения сеток для режиссуры кадра и сцены при генерации изображений и видео."));text.TextAlignment=TextAlignment.Center;
         var license=UI.Text(Product.License(vm));license.TextAlignment=TextAlignment.Center;
-        var copyright=UI.Text(Product.Copyright,12);copyright.TextAlignment=TextAlignment.Center;
-        Body.Content=new ScrollViewer{Content=new StackPanel{Spacing=12,Margin=new Thickness(28,10,28,24),Children={logo,title,version,text,license,copyright}}};
+        var github = new HyperlinkButton
+        {
+            Content = "GitHub",
+            NavigateUri = new Uri("https://github.com/Aqorde/screenmap-maker"),
+            FontSize = 12,
+            MinHeight = 22,
+            Padding = new Thickness(3,2),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        var footer = UI.Row(UI.Text(Product.AboutCredit,12), UI.Text("|",12), github);
+        footer.HorizontalAlignment = HorizontalAlignment.Center;
+        footer.Spacing = 6;
+        Body.Content=new ScrollViewer{Content=new StackPanel{Spacing=12,Margin=new Thickness(28,10,28,24),Children={logo,title,version,text,license,footer}}};
     }
 }
