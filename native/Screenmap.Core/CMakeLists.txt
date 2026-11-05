@@ -1,0 +1,6 @@
+add_library(ScreenmapCore SHARED src/core.cpp)
+target_compile_definitions(ScreenmapCore PRIVATE SCREENMAP_EXPORTS)
+target_include_directories(ScreenmapCore PUBLIC include)
+if(MSVC)
+  target_compile_options(ScreenmapCore PRIVATE /W4 /WX /utf-8)
+endif()

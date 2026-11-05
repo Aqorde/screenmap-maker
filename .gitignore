@@ -1,0 +1,15 @@
+out/
+releases/
+**/bin/
+**/obj/
+**/config/
+.vs/
+*.user
+*.tmp
+.env
+.env.*
+scenes/
+*.screenmap
+*.psd
+docs/bugreports/
+STATE_DROP.md

@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.24)
+project(ScreenmapMaker VERSION 0.5.9 LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+enable_testing()
+add_subdirectory(native/Screenmap.Core)
+add_subdirectory(tests/native)

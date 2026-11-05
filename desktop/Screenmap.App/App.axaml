@@ -1,0 +1,25 @@
+<Application xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="Screenmap.App.App">
+  <Application.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+       <ResourceInclude Source="avares://ScreenmapMaker/Themes/Palettes.axaml"/>
+      </ResourceDictionary.MergedDictionaries>
+      <FontFamily x:Key="BaseFont">Calibri</FontFamily><x:Double x:Key="BaseSize">14</x:Double>
+      <Thickness x:Key="AppButtonPadding">12,7</Thickness><x:Double x:Key="AppButtonMinHeight">32</x:Double>
+    </ResourceDictionary>
+  </Application.Resources>
+  <Application.Styles>
+    <FluentTheme/>
+    <Style Selector="Window"><Setter Property="Background" Value="{DynamicResource Surface0}"/><Setter Property="Foreground" Value="{DynamicResource Ink}"/><Setter Property="FontFamily" Value="{DynamicResource BaseFont}"/><Setter Property="FontSize" Value="{DynamicResource BaseSize}"/></Style>
+    <Style Selector="Button"><Setter Property="VerticalContentAlignment" Value="Center"/><Setter Property="HorizontalContentAlignment" Value="Center"/><Setter Property="CornerRadius" Value="7"/><Setter Property="Padding" Value="{DynamicResource AppButtonPadding}"/><Setter Property="MinHeight" Value="{DynamicResource AppButtonMinHeight}"/></Style>
+    <Style Selector="ToggleButton"><Setter Property="VerticalContentAlignment" Value="Center"/><Setter Property="HorizontalContentAlignment" Value="Center"/><Setter Property="CornerRadius" Value="7"/><Setter Property="Padding" Value="{DynamicResource AppButtonPadding}"/></Style>
+    <Style Selector="TextBox"><Setter Property="CornerRadius" Value="6"/></Style>
+    <Style Selector="ComboBox"><Setter Property="CornerRadius" Value="6"/><Setter Property="MinWidth" Value="120"/></Style>
+    <Style Selector="Menu"><Setter Property="Background" Value="{DynamicResource Surface1}"/></Style>
+    <Style Selector="ToolTip"><Setter Property="FontSize" Value="13"/></Style>
+    <Style Selector="Button.caption"><Setter Property="Width" Value="46"/><Setter Property="Height" Value="34"/><Setter Property="MinHeight" Value="0"/><Setter Property="Padding" Value="0"/><Setter Property="Background" Value="Transparent"/><Setter Property="BorderThickness" Value="0"/><Setter Property="FontSize" Value="18"/><Setter Property="HorizontalContentAlignment" Value="Center"/></Style>
+    <Style Selector="Button.caption:pointerover /template/ ContentPresenter"><Setter Property="Background" Value="{DynamicResource Surface2}"/><Setter Property="Foreground" Value="{DynamicResource Ink}"/></Style>
+    <Style Selector="Button.caption-close:pointerover /template/ ContentPresenter"><Setter Property="Background" Value="#C4424A"/><Setter Property="Foreground" Value="White"/></Style>
+    <Style Selector="Button.guide-link"><Setter Property="Background" Value="Transparent"/><Setter Property="BorderThickness" Value="0"/><Setter Property="Foreground" Value="{DynamicResource PaletteHighlightBrush}"/><Setter Property="Padding" Value="3,2"/><Setter Property="MinHeight" Value="22"/><Setter Property="HorizontalAlignment" Value="Left"/></Style>
+  </Application.Styles>
+</Application>

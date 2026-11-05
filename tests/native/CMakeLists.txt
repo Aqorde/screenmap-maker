@@ -1,0 +1,7 @@
+add_executable(ScreenmapCoreTests core_tests.cpp)
+target_link_libraries(ScreenmapCoreTests PRIVATE ScreenmapCore)
+if(MSVC)
+  target_compile_options(ScreenmapCoreTests PRIVATE /W4 /WX /utf-8)
+endif()
+add_custom_command(TARGET ScreenmapCoreTests POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:ScreenmapCore> $<TARGET_FILE_DIR:ScreenmapCoreTests>)
+add_test(NAME ScreenmapCoreInvariants COMMAND ScreenmapCoreTests)

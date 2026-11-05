@@ -1,0 +1,35 @@
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:chrome="using:Avalonia.Controls.Chrome" x:Class="Screenmap.App.MainWindow"
+ Width="1440" Height="940" MinWidth="1000" MinHeight="680" Title="aqorde ScreenMap Maker v0.5.9b (beta)"
+ WindowDecorations="BorderOnly" ExtendClientAreaToDecorationsHint="True" ExtendClientAreaTitleBarHeightHint="0">
+ <Grid RowDefinitions="38,Auto,Auto,*">
+  <Grid x:Name="TitleBar" ColumnDefinitions="*,Auto,Auto,Auto" Background="{DynamicResource Surface0}" chrome:WindowDecorationProperties.ElementRole="TitleBar">
+   <StackPanel Orientation="Horizontal" Spacing="10" Margin="14,0" VerticalAlignment="Center">
+    <Image Source="avares://ScreenmapMaker/Assets/ScreenmapMaker_128.png" Width="20" Height="20"/>
+    <TextBlock Text="aqorde ScreenMap Maker v0.5.9b (beta)" VerticalAlignment="Center" FontWeight="SemiBold"/>
+   </StackPanel>
+   <Button x:Name="MinimizeButton" Grid.Column="1" Classes="caption" Content="─" chrome:WindowDecorationProperties.ElementRole="MinimizeButton"/>
+   <Button x:Name="MaximizeButton" Grid.Column="2" Classes="caption" Content="□" chrome:WindowDecorationProperties.ElementRole="MaximizeButton"/>
+   <Button x:Name="CloseButton" Grid.Column="3" Classes="caption caption-close" Content="×" chrome:WindowDecorationProperties.ElementRole="CloseButton"/>
+  </Grid>
+  <Border x:Name="MenuCard" Grid.Row="1" Background="{DynamicResource Surface1}" BorderBrush="{DynamicResource Hairline}" BorderThickness="1" CornerRadius="12" Margin="12,0,12,0" Padding="10,4" ClipToBounds="True">
+   <Menu x:Name="MainMenu"/>
+  </Border>
+  <WrapPanel x:Name="QuickBar" Grid.Row="2" Margin="16,8,16,8" ItemSpacing="8" LineSpacing="6"/>
+  <Grid x:Name="WorkArea" Grid.Row="3" ColumnDefinitions="*,284" Margin="12,0,12,12" ColumnSpacing="12">
+   <Border x:Name="ViewportCard" Background="{DynamicResource Surface1}" BorderBrush="{DynamicResource Hairline}" BorderThickness="1" CornerRadius="12" ClipToBounds="True">
+    <Grid RowDefinitions="Auto,*">
+     <TextBlock x:Name="ViewportTitle" Text="Вьюпорт" Margin="18,18,18,8" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource MutedInk}"/>
+     <ContentControl x:Name="ViewportHost" Grid.Row="1"/>
+    </Grid>
+   </Border>
+   <Border x:Name="LayersCard" Grid.Column="1" Background="{DynamicResource Surface1}" BorderBrush="{DynamicResource Hairline}" BorderThickness="1" CornerRadius="12">
+    <Grid RowDefinitions="Auto,*">
+     <TextBlock x:Name="LayersTitle" Text="Слои" Margin="16,18,28,8" FontSize="18" FontWeight="SemiBold"/>
+     <ScrollViewer x:Name="SidebarScroll" Grid.Row="1" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+      <StackPanel x:Name="Sidebar" Margin="16,4,30,16" Spacing="12"/>
+     </ScrollViewer>
+    </Grid>
+   </Border>
+  </Grid>
+ </Grid>
+</Window>

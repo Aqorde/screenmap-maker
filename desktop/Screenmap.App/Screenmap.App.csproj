@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType><TargetFramework>net10.0</TargetFramework>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks><PlatformTarget>x64</PlatformTarget>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier><AssemblyName>ScreenmapMaker</AssemblyName>
+    <SelfContained>true</SelfContained>
+    <RootNamespace>Screenmap.App</RootNamespace><Version>0.5.9-beta</Version><AssemblyVersion>0.5.9.0</AssemblyVersion><FileVersion>0.5.9.0</FileVersion><InformationalVersion>0.5.9b (beta)</InformationalVersion>
+    <ApplicationIcon>..\..\assets\icons\ScreenmapMaker.ico</ApplicationIcon>
+    <NativeLibraryPath>$(MSBuildProjectDirectory)\..\..\out\build\native-v059b\native\Screenmap.Core\$(Configuration)\ScreenmapCore.dll</NativeLibraryPath>
+    <AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.4"/>
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.4"/>
+    <PackageReference Include="Avalonia.Headless" Version="12.1.4"/>
+    <None Include="$(NativeLibraryPath)" Link="ScreenmapCore.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest"/>
+    <AvaloniaResource Include="..\..\assets\icons\ScreenmapMaker.ico" Link="Assets\ScreenmapMaker.ico"/>
+    <AvaloniaResource Include="..\..\ScreenmapMaker_128.png" Link="Assets\ScreenmapMaker_128.png"/>
+    <AvaloniaResource Include="..\..\ScreenmapMaker_64.png" Link="Assets\ScreenmapMaker_64.png"/>
+    <EmbeddedResource Include="Guide\*.md"/>
+  </ItemGroup>
+  <Target Name="CheckNativeLibrary" BeforeTargets="CoreCompile">
+    <Error Condition="!Exists('$(NativeLibraryPath)')" Text="Build native ABI 2 first using scripts/build.ps1."/>
+  </Target>
+</Project>
