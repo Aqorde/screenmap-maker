@@ -78,6 +78,32 @@ void open_perspective(){
    check(sm_hit_test(s.get(),u,v)>0,"zone hit testing works with perspective outside the image");
  }
 }
+void relaxing_zones(){
+ auto c=config();
+ c.center_y=.74;c.radius=.13;
+ for(bool left:{true,false}){
+  double last_spread=1;
+  for(double outside:{0.0,.04,.08,.12,.15,.35,1.0}){
+   c.center_x=left?-outside:1+outside;
+   auto s=build(c);
+   check(close(sm_config(s.get())->center_x,c.center_x),"zone relaxation leaves the perspective coordinate intact");
+   uint32_t n=0;auto regions=sm_regions(s.get(),&n);
+   double minimum=1,maximum=0,total=0;int inner=0,outer=0;
+   for(uint32_t i=0;i<n;i++){
+    const auto& region=regions[i];
+    const double a=area(region);
+    minimum=std::min(minimum,a);maximum=std::max(maximum,a);total+=a;
+    check(region.index==(region.ring==1?++inner:++outer),"zone IDs remain ordered during relaxation");
+   }
+   const double spread=maximum-minimum;
+   check(inner==8&&outer==24&&minimum>0&&close(total,1),"relaxed zones still partition the frame");
+   check(spread<=last_spread+1e-9,"zone area spread decreases as perspective moves farther out");
+   if(outside==.08)check(spread>0&&spread<last_spread,"zone relaxation has an intermediate shape");
+   if(outside>=.15)check(close(minimum,1.0/32)&&close(maximum,1.0/32),"outlying perspective restores neutral zone areas");
+   last_spread=spread;
+  }
+ }
+}
 void coupled(){
  auto c=config();auto a=build(c);c.radius=.18;auto b=build(c);
  uint32_t n=0,m=0;auto la=sm_lines(a.get(),&n);auto lb=sm_lines(b.get(),&m);
@@ -107,4 +133,4 @@ void coupled(){
  for(int i=0;i<1000;i++){auto s=build(config());check(sm_hit_test(s.get(),.5,.5)==1,"lifetime");}
 }
 }
-int main(){try{check(SM_ABI==2&&sm_abi_version()==2,"ABI");cases();open_perspective();coupled();std::cout<<"PASS: "<<assertions<<" assertions\n";return 0;}catch(const std::exception&e){std::cerr<<e.what()<<'\n';return 1;}}
+int main(){try{check(SM_ABI==2&&sm_abi_version()==2,"ABI");cases();open_perspective();relaxing_zones();coupled();std::cout<<"PASS: "<<assertions<<" assertions\n";return 0;}catch(const std::exception&e){std::cerr<<e.what()<<'\n';return 1;}}

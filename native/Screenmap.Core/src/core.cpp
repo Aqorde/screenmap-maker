@@ -37,10 +37,14 @@ double knot(double v,double left,double center,double right) {
 }
 Point map(Point p,const SmConfig& c) {
     auto f=far_box(c);
-    // Zone addresses partition the image even when the perspective point is off-screen.
     const double x=std::clamp(c.center_x,.08,.92);
     const double rx=std::min({c.radius*1.05,x-.06,.94-x});
-    return {knot(p.x,(x-rx)/2,x,(1+x+rx)/2),knot(p.y,f.t/2,c.center_y,(1+f.b)/2)};
+    const Point projected{knot(p.x,(x-rx)/2,x,(1+x+rx)/2),knot(p.y,f.t/2,c.center_y,(1+f.b)/2)};
+    // Relax the screen-space partition from the edge inset to 15% outside the
+    // frame. Blending two ordered grids keeps zone IDs and positive areas.
+    const double t=std::clamp((std::abs(c.center_x-.5)-.42)/.23,0.0,1.0);
+    const double relief=t*t*(3-2*t);
+    return {std::lerp(projected.x,p.x,relief),std::lerp(projected.y,p.y,relief)};
 }
 void line(SmScene& s, Point a, Point b, int layer, int kind=0) {
     s.lines.push_back({a.x,a.y,b.x,b.y,layer,kind});

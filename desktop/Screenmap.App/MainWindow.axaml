@@ -1,11 +1,11 @@
 <Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:chrome="using:Avalonia.Controls.Chrome" x:Class="Screenmap.App.MainWindow"
- Width="1440" Height="940" MinWidth="1000" MinHeight="680" Title="aqorde ScreenMap Maker v0.5.10b (beta)"
+ Width="1440" Height="940" MinWidth="1000" MinHeight="680" Title="aqorde ScreenMap Maker v0.5.11rc (RC)"
  WindowDecorations="BorderOnly" ExtendClientAreaToDecorationsHint="True" ExtendClientAreaTitleBarHeightHint="0">
  <Grid RowDefinitions="38,Auto,Auto,*">
   <Grid x:Name="TitleBar" ColumnDefinitions="*,Auto,Auto,Auto" Background="{DynamicResource Surface0}" chrome:WindowDecorationProperties.ElementRole="TitleBar">
    <StackPanel Orientation="Horizontal" Spacing="10" Margin="14,0" VerticalAlignment="Center">
     <Image Source="avares://ScreenmapMaker/Assets/ScreenmapMaker_128.png" Width="20" Height="20"/>
-    <TextBlock Text="aqorde ScreenMap Maker v0.5.10b (beta)" VerticalAlignment="Center" FontWeight="SemiBold"/>
+    <TextBlock Text="aqorde ScreenMap Maker v0.5.11rc (RC)" VerticalAlignment="Center" FontWeight="SemiBold"/>
    </StackPanel>
    <Button x:Name="MinimizeButton" Grid.Column="1" Classes="caption" Content="─" chrome:WindowDecorationProperties.ElementRole="MinimizeButton"/>
    <Button x:Name="MaximizeButton" Grid.Column="2" Classes="caption" Content="□" chrome:WindowDecorationProperties.ElementRole="MaximizeButton"/>

@@ -1,6 +1,6 @@
 <a id="top"></a>
 # aqorde ScreenMap Maker
-**Framing and composition guide · version 0.5.10b (beta)**
+**Framing and composition guide · version 0.5.11rc (RC)**
 A practical guide from your first grid to a reference for AI image and video generation.
 
 ## Contents

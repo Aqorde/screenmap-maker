@@ -1,5 +1,5 @@
 ﻿#ifndef PublishDir
-  #define PublishDir "..\releases\0.5.10b\win-x64"
+  #define PublishDir "..\releases\0.5.11rc\win-x64"
 #endif
 #ifndef OutputDir
   #define OutputDir "..\releases"
@@ -9,20 +9,20 @@
   #define Association ".screenmap-installtest"
   #define ProgId "aqorde.ScreenmapMaker.InstallTestDocument"
   #define DesktopName "aqorde ScreenMap Maker Installer Test"
-  #define SetupName "aqorde-ScreenMapMaker-0.5.10b-installer-test"
+  #define SetupName "aqorde-ScreenMapMaker-0.5.11rc-installer-test"
 #else
   #define ProductId "aqorde.ScreenmapMaker"
   #define Association ".screenmap"
   #define ProgId "aqorde.ScreenmapMaker.Document"
   #define DesktopName "aqorde ScreenMap Maker"
-  #define SetupName "aqorde-ScreenMapMaker-0.5.10b-setup-win-x64"
+  #define SetupName "aqorde-ScreenMapMaker-0.5.11rc-setup-win-x64"
 #endif
 
 [Setup]
 AppId={#ProductId}
 AppName=aqorde ScreenMap Maker
-AppVersion=0.5.10b (beta)
-AppVerName=aqorde ScreenMap Maker 0.5.10b (beta)
+AppVersion=0.5.11rc (RC)
+AppVerName=aqorde ScreenMap Maker 0.5.11rc (RC)
 AppPublisher=Alexander Andreev (aqorde)
 AppCopyright=Copyright (c) 2026 Alexander Andreev (aqorde)
 DefaultDirName={localappdata}\Programs\aqorde\ScreenmapMaker
@@ -42,7 +42,7 @@ SetupIconFile=..\assets\icons\ScreenmapMaker.ico
 LicenseFile=..\LICENSE.txt
 OutputDir={#OutputDir}
 OutputBaseFilename={#SetupName}
-VersionInfoVersion=0.5.10.0
+VersionInfoVersion=0.5.11.0
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
@@ -75,10 +75,11 @@ Source: "installed-mode.ru"; DestDir: "{app}"; DestName: "installed-mode"; Flags
 Type: files; Name: "{autodesktop}\{#DesktopName}.lnk"; Tasks: desktopicon; Check: IsPreviousDesktopShortcut('')
 Type: files; Name: "{autodesktop}\{#DesktopName} v0.5.8b.lnk"; Tasks: desktopicon; Check: IsPreviousDesktopShortcut(' v0.5.8b')
 Type: files; Name: "{autodesktop}\{#DesktopName} v0.5.9b.lnk"; Tasks: desktopicon; Check: IsPreviousDesktopShortcut(' v0.5.9b')
+Type: files; Name: "{autodesktop}\{#DesktopName} v0.5.10b.lnk"; Tasks: desktopicon; Check: IsPreviousDesktopShortcut(' v0.5.10b')
 
 [Icons]
 Name: "{group}\aqorde ScreenMap Maker"; Filename: "{app}\ScreenmapMaker.exe"; WorkingDir: "{app}"
-Name: "{autodesktop}\{#DesktopName} v0.5.10b"; Filename: "{app}\ScreenmapMaker.exe"; WorkingDir: "{app}"; Tasks: desktopicon
+Name: "{autodesktop}\{#DesktopName} v0.5.11rc"; Filename: "{app}\ScreenmapMaker.exe"; WorkingDir: "{app}"; Tasks: desktopicon
 
 [Registry]
 Root: HKA; Subkey: "Software\Classes\{#ProgId}"; ValueType: string; ValueData: "aqorde ScreenMap scene"; Flags: uninsdeletekey; Tasks: associate
