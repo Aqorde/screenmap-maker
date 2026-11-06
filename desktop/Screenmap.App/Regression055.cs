@@ -39,7 +39,7 @@ internal static class Regression055 {
         vm.Update(d=>{d.Mode=1;d.Layers[0].Visible=false;d.Layers[1].Visible=false;d.Layers[2].Visible=false;});
         string flat=PromptTemplate.Create(vm,"flat.png","en",false);
         Check(flat.Contains("Primitive grid (2D)")&&!flat.Contains("Depth frames are not containers")&&!flat.Contains("**PGFA:**")&&!flat.Contains("**Levels:**"),"legend follows primitive mode and disabled layers");
-        Check(flat.Contains("transparent",StringComparison.OrdinalIgnoreCase)&&PromptTemplate.Create(vm,"photo.png","ru",true).Contains("Экспортированный фон"),"legend follows chosen background export");
+        Check(flat.Contains("Solid guide background")&&PromptTemplate.Create(vm,"photo.png","ru",true).Contains("Однотонная подложка карты"),"legend describes the solid background when there is no photo");
         bool rejected=false;try{vm.Update(d=>d.ExportPromptLanguage="invalid",false);}catch(InvalidDataException){rejected=true;}Check(rejected,"invalid prompt language is rejected");
         Check(Program.ProjectArgument(["--config-dir","config.screenmap",scene])==scene&&Program.ProjectArgument(["--verify",scene]) is null,"association launch separates project argument from option values");
         Check(Program.ProjectArgument(["C:\\сцены\\TEST.SCREENMAP"])=="C:\\сцены\\TEST.SCREENMAP","association launch accepts uppercase extension and Cyrillic paths");

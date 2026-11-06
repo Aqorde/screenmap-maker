@@ -8,11 +8,11 @@ internal sealed class RenderPlan:IDisposable {
     internal SKPicture Picture {get;}
     internal float Width {get;}
     internal float Height {get;}
-    internal RenderPlan(Editor vm,bool background=true) {
+    internal RenderPlan(Editor vm) {
         Width=(float)(720.0*vm.Doc.P/Math.Min(vm.Doc.P,vm.Doc.Q));Height=(float)(720.0*vm.Doc.Q/Math.Min(vm.Doc.P,vm.Doc.Q));
         using var recorder=new SKPictureRecorder();
         var canvas=recorder.BeginRecording(new SKRect(0,0,Width,Height));
-        RenderEngine.Draw(canvas,vm.Doc,vm.Scene,vm.Prefs.FontFamily,vm.Photo,Width,Height,background);
+        RenderEngine.Draw(canvas,vm.Doc,vm.Scene,vm.Prefs.FontFamily,vm.Photo,Width,Height);
         Picture=recorder.EndRecording();
     }
     internal RenderPlan Acquire(){Interlocked.Increment(ref references);return this;}
@@ -25,21 +25,34 @@ internal static class RenderEngine {
     internal static SKColor Color(string value,double opacity=1){
         var color=SKColor.Parse(value);return color.WithAlpha((byte)Math.Clamp((int)Math.Round(opacity*255),0,255));
     }
-    internal static void Draw(SKCanvas canvas,DocumentSettings doc,NativeScene scene,string family,PhotoAsset? photo,float w,float h,bool background){
+    internal static void Draw(SKCanvas canvas,DocumentSettings doc,NativeScene scene,string family,PhotoAsset? photo,float w,float h){
         canvas.Save();canvas.ClipRect(new SKRect(0,0,w,h));
-        if(background)DrawBackground(canvas,doc,photo,w,h);
+        DrawBackground(canvas,doc,photo,w,h);
         var labels=LabelLayout.Build(doc,scene,family,w,h);
         foreach(int layer in Order)if(Visible(doc,layer))DrawGeometry(canvas,doc,scene,layer,w,h);
         foreach(int layer in Order)if(layer!=5&&Visible(doc,layer))DrawLabels(canvas,doc,family,labels,layer,w,h);
         canvas.Restore();
     }
-    internal static void DrawBackground(SKCanvas c,DocumentSettings d,PhotoAsset? photo,float w,float h){
-        c.Clear(Color(d.Background));
+    private static void DrawBackground(SKCanvas c,DocumentSettings d,PhotoAsset? photo,float w,float h){
+        if(d.BackgroundOpacity==0)return;
+        if(photo is null||d.BackgroundOpacity==1){
+            DrawBackgroundContent(c,d,photo,w,h,d.BackgroundOpacity);
+            return;
+        }
+        // Fade the composited photo and matte together so overlap does not increase alpha.
+        using var layer=new SKPaint{Color=Color("#FFFFFF",d.BackgroundOpacity)};
+        c.SaveLayer(layer);
+        DrawBackgroundContent(c,d,photo,w,h);
+        c.Restore();
+    }
+    private static void DrawBackgroundContent(SKCanvas c,DocumentSettings d,PhotoAsset? photo,float w,float h,double opacity=1){
+        using var fill=new SKPaint{Color=Color(d.Background,opacity)};
+        c.DrawRect(0,0,w,h,fill);
         if(photo is null)return;
         float scale=d.PhotoFill?Math.Max(w/photo.Image.Width,h/photo.Image.Height):Math.Min(w/photo.Image.Width,h/photo.Image.Height);
         float iw=photo.Image.Width*scale,ih=photo.Image.Height*scale;
         var rect=SKRect.Create((float)((w-iw)*d.PhotoX),(float)((h-ih)*d.PhotoY),iw,ih);
-        using var paint=new SKPaint{IsAntialias=true,Color=SKColors.White.WithAlpha((byte)Math.Round(d.PhotoOpacity*255))};
+        using var paint=new SKPaint{IsAntialias=true};
         c.DrawImage(photo.Image,rect,new SKSamplingOptions(SKFilterMode.Linear),paint);
     }
     private static bool Visible(DocumentSettings d,int layer)=>layer==5?d.Mode==1&&d.PrimitiveCircle&&d.Layers[4].Visible:d.Layers[layer].Visible;
@@ -119,7 +132,7 @@ internal static class RenderEngine {
         var (w,h)=Dimensions(vm.Doc,width);if(dpi is <36 or >1200)throw new ArgumentException("DPI: 36–1200");
         using var surface=SKSurface.Create(new SKImageInfo(w,h,SKColorType.Bgra8888,SKAlphaType.Premul))??throw new InvalidOperationException("Unable to allocate image");
         surface.Canvas.Clear(SKColors.Transparent);
-        Draw(surface.Canvas,vm.Doc,vm.Scene,vm.Prefs.FontFamily,vm.Photo,w,h,photo&&vm.Photo is not null);
+        Draw(surface.Canvas,vm.Doc,vm.Scene,vm.Prefs.FontFamily,photo?vm.Photo:null,w,h);
         using var image=surface.Snapshot();using var data=image.Encode(SKEncodedImageFormat.Png,100);
         StateStore.Atomic(path,WithDpi(data.ToArray(),dpi));
     }
@@ -139,12 +152,12 @@ internal static class RenderEngine {
         var labels=LabelLayout.Build(vm.Doc,vm.Scene,vm.Prefs.FontFamily,w,h);
         var passes=new[]{(Layer:-1,Text:false)}.Concat(Order.Select(l=>(Layer:l,Text:false))).Concat(Order.Where(l=>l!=5).Select(l=>(Layer:l,Text:true)));
         foreach(var pass in passes){int layer=pass.Layer;
-            if(layer==-1&&!(photo&&vm.Photo is not null)||layer>=0&&!Visible(vm.Doc,layer))continue;
+            if(layer==-1&&vm.Doc.BackgroundOpacity==0||layer>=0&&!Visible(vm.Doc,layer))continue;
             using var memory=new MemoryStream();
             using(var stream=new SKManagedWStream(memory,false))
             using(var c=SKSvgCanvas.Create(new SKRect(0,0,w,h),stream)){
                 c.Save();c.ClipRect(new SKRect(0,0,w,h));
-                if(layer==-1)DrawBackground(c,vm.Doc,vm.Photo,w,h);else if(pass.Text)DrawLabels(c,vm.Doc,vm.Prefs.FontFamily,labels,layer,w,h);else DrawGeometry(c,vm.Doc,vm.Scene,layer,w,h);
+                if(layer==-1)DrawBackgroundContent(c,vm.Doc,photo?vm.Photo:null,w,h);else if(pass.Text)DrawLabels(c,vm.Doc,vm.Prefs.FontFamily,labels,layer,w,h);else DrawGeometry(c,vm.Doc,vm.Scene,layer,w,h);
                 c.Restore();c.Flush();
             }
             var sub=XDocument.Parse(Encoding.UTF8.GetString(memory.ToArray()));
@@ -154,7 +167,9 @@ internal static class RenderEngine {
                 if(a.Name.LocalName=="id")a.Value=ids[a.Value];
                 else foreach(var id in ids){a.Value=a.Value.Replace("url(#"+id.Key+")","url(#"+id.Value+")");if(a.Value=="#"+id.Key)a.Value="#"+id.Value;}
             }
-            root.Add(new XElement(ns+"g",new XAttribute("id",name),sub.Root!.Elements()));
+            var group=new XElement(ns+"g",new XAttribute("id",name),sub.Root!.Elements());
+            if(layer==-1&&vm.Doc.BackgroundOpacity<1)group.SetAttributeValue("opacity",vm.Doc.BackgroundOpacity);
+            root.Add(group);
         }
         StateStore.Atomic(path,Encoding.UTF8.GetBytes(new XDocument(root).ToString()));
     }

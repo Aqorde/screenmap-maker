@@ -2,17 +2,18 @@
 # Does not install the production package or touch the real .screenmap association.
 $ErrorActionPreference='Stop'
 $root=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
-$base=Join-Path $root 'out\installer-test-0511rc'
-$setup=Join-Path $base 'aqorde-ScreenMapMaker-0.5.11rc-installer-test.exe'
+$base=Join-Path $root 'out\installer-test-0512rc'
+$setup=Join-Path $base 'aqorde-ScreenMapMaker-0.5.12rc-installer-test.exe'
 $target=[IO.Path]::GetFullPath((Join-Path $base ('installed-'+[DateTime]::UtcNow.ToString('yyyyMMddHHmmss'))))
 if(-not $target.StartsWith($base+'\',[StringComparison]::OrdinalIgnoreCase)){throw 'Unsafe installer test target'}
 $extension='Software\Classes\.screenmap-installtest'
 $progId='Software\Classes\aqorde.ScreenmapMaker.InstallTestDocument'
 $desktop=[Environment]::GetFolderPath('DesktopDirectory')
-$versionedLink=Join-Path $desktop 'aqorde ScreenMap Maker Installer Test v0.5.11rc.lnk'
+$versionedLink=Join-Path $desktop 'aqorde ScreenMap Maker Installer Test v0.5.12rc.lnk'
 $legacyLink=Join-Path $desktop 'aqorde ScreenMap Maker Installer Test.lnk'
 $previousLink=Join-Path $desktop 'aqorde ScreenMap Maker Installer Test v0.5.10b.lnk'
-foreach($link in @($versionedLink,$legacyLink,$previousLink)){
+$previousRcLink=Join-Path $desktop 'aqorde ScreenMap Maker Installer Test v0.5.11rc.lnk'
+foreach($link in @($versionedLink,$legacyLink,$previousLink,$previousRcLink)){
  if(Test-Path -LiteralPath $link){throw "Test shortcut already exists: $link"}
 }
 foreach($key in @($extension,$progId)){
@@ -36,8 +37,8 @@ try{
  Check ((Get-Content -LiteralPath $marker -Raw).Trim() -eq 'en') 'default setup language is English and seeds the app'
  $shell=New-Object -ComObject WScript.Shell
  $exe=Join-Path $target 'ScreenmapMaker.exe'
- Check ((Test-Path -LiteralPath $versionedLink) -and $shell.CreateShortcut($versionedLink).TargetPath -eq $exe) 'desktop shortcut includes v0.5.11rc and points to the installed EXE'
- $manifest=Get-Content -LiteralPath (Join-Path $root 'releases\0.5.11rc\manifest.json') -Raw|ConvertFrom-Json
+ Check ((Test-Path -LiteralPath $versionedLink) -and $shell.CreateShortcut($versionedLink).TargetPath -eq $exe) 'desktop shortcut includes v0.5.12rc and points to the installed EXE'
+ $manifest=Get-Content -LiteralPath (Join-Path $root 'releases\0.5.12rc\manifest.json') -Raw|ConvertFrom-Json
  $mismatch=@(foreach($record in $manifest.files){$path=Join-Path $target $record.path;if(-not(Test-Path -LiteralPath $path) -or (Get-FileHash -LiteralPath $path).Hash -ne $record.sha256){$record.path}})
  Check ($mismatch.Count -eq 0) 'all installed payload files match release manifest SHA256'
  $key=[Microsoft.Win32.Registry]::CurrentUser.OpenSubKey($extension)
@@ -48,7 +49,7 @@ try{
  try{Check ($key.GetValue('') -eq ('"'+$target+'\ScreenmapMaker.exe" "%1"')) 'shell open command quotes application and project paths'}finally{$key.Dispose()}
  $data=Join-Path $target 'config';[IO.Directory]::CreateDirectory($data)|Out-Null
  $sentinel=Join-Path $data 'keep-user-data.txt';[IO.File]::WriteAllText($sentinel,'preserve on upgrade and uninstall')
- foreach($link in @($legacyLink,$previousLink)){
+ foreach($link in @($legacyLink,$previousLink,$previousRcLink)){
   $shortcut=$shell.CreateShortcut($link)
   $shortcut.TargetPath=$exe
   $shortcut.Save()
@@ -58,6 +59,7 @@ try{
  Check ((Get-Content -LiteralPath $marker -Raw).Trim() -eq 'ru') 'selecting Russian in setup seeds the app with Russian'
  Check (-not (Test-Path -LiteralPath $legacyLink)) 'upgrade replaces a matching legacy desktop shortcut'
  Check (-not (Test-Path -LiteralPath $previousLink)) 'upgrade replaces the desktop shortcut from v0.5.10b'
+ Check (-not (Test-Path -LiteralPath $previousRcLink)) 'upgrade replaces the desktop shortcut from v0.5.11rc'
  Check ([IO.File]::ReadAllText($sentinel) -eq 'preserve on upgrade and uninstall') 'upgrade preserves existing user files'
  Run-Setup $setup ($installArgs + ('/LOG="'+(Join-Path $base 'english-default-after-russian.log')+'"'))
  Check ((Get-Content -LiteralPath $marker -Raw).Trim() -eq 'en') 'English is the setup default after a previous Russian install'

@@ -93,7 +93,7 @@ public sealed partial class MainWindow:Window {
         Add("size","Centre point size","Размер центральной точки",()=>OpenSlider(L("Size","Размер"),Editor.Doc.PrimitiveRadius,.005,.2,v=>Editor.Update(d=>d.PrimitiveRadius=v)));
         AddAsync("photo","Background picture…","Фото для фона…",OpenPhoto);
         Add("removePhoto","Remove picture","Убрать фото",()=>Editor.Update(d=>d.PhotoId=null,false));
-        Add("photoOpacity","Picture opacity","Непрозрачность фото",()=>{if(Editor.Photo is not null)OpenSlider(L("Picture opacity","Непрозрачность фото"),Editor.Doc.PhotoOpacity,0,1,v=>Editor.Update(d=>d.PhotoOpacity=v,false));});
+        Add("photoOpacity","Transparency","Прозрачность",()=>OpenSlider(L("Transparency, %","Прозрачность, %"),Math.Round(Editor.Doc.BackgroundTransparency*100),0,100,v=>Editor.Update(d=>d.BackgroundTransparency=v/100,false),true));
         Add("photoFit","Fill / fit picture","Заполнить / вписать фото",()=>Editor.Update(d=>d.PhotoFill=!d.PhotoFill,false),()=>Editor.Doc.PhotoFill);
         Add("photoX","Picture crop X","Кадрирование фото X",()=>OpenSlider("X",Editor.Doc.PhotoX,0,1,v=>Editor.Update(d=>d.PhotoX=v,false)));
         Add("photoY","Picture crop Y","Кадрирование фото Y",()=>OpenSlider("Y",Editor.Doc.PhotoY,0,1,v=>Editor.Update(d=>d.PhotoY=v,false)));
@@ -160,7 +160,7 @@ public sealed partial class MainWindow:Window {
         Slider(panel,L("PGFA density","Плотность ОППС"),1,6,()=>Editor.Doc.PgfaDensity,v=>Editor.Update(d=>d.PgfaDensity=(int)Math.Round(v)),true);
         panel.Children.Add(UI.Heading(L("Background","Фон")));
         panel.Children.Add(UI.Row(UI.Button(L("Picture…","Фото…"),()=>_ = GuardAsync(OpenPhoto)),UI.Button(L("Remove","Убрать"),()=>Editor.Update(d=>d.PhotoId=null,false))));
-        var imageOpacity=Slider(panel,L("Opacity","Непрозрачность"),0,1,()=>Editor.Doc.PhotoOpacity,v=>Editor.Update(d=>d.PhotoOpacity=v,false));imageOpacity.IsEnabled=Editor.Photo is not null;
+        Slider(panel,L("Transparency","Прозрачность"),0,1,()=>Editor.Doc.BackgroundTransparency,v=>Editor.Update(d=>d.BackgroundTransparency=v,false));
         var fit=UI.Select([L("Fill","Заполнить"),L("Fit","Вписать")],Editor.Doc.PhotoFill?0:1,i=>{if(!refreshing)Editor.Update(d=>d.PhotoFill=i==0,false);});fit.IsEnabled=Editor.Photo is not null;panel.Children.Add(fit);refreshers.Add(()=>fit.SelectedIndex=Editor.Doc.PhotoFill?0:1);
         var x=Slider(panel,L("Crop X","Кадрирование X"),0,1,()=>Editor.Doc.PhotoX,v=>Editor.Update(d=>d.PhotoX=v,false));x.IsEnabled=Editor.Photo is not null;
         var y=Slider(panel,L("Crop Y","Кадрирование Y"),0,1,()=>Editor.Doc.PhotoY,v=>Editor.Update(d=>d.PhotoY=v,false));y.IsEnabled=Editor.Photo is not null;
@@ -190,7 +190,6 @@ public sealed partial class MainWindow:Window {
                 if(button is ToggleButton t)t.IsChecked=a.Selected?.Invoke()==true;
                 button.IsEnabled=a.Enabled?.Invoke()??true;
                 if(a.Id.StartsWith("layer")&&int.TryParse(a.Id.AsSpan(5),out int layer)){button.Content=UI.LayerTitle(Editor,layer,Editor.Doc.Layers[layer].Visible);ToolTip.SetTip(button,UI.LayerTip(Editor,layer));}
-                if(a.Id=="photoOpacity")button.IsEnabled=Editor.Photo is not null;
             }
             foreach(var update in refreshers)update();
         }finally{refreshing=false;}

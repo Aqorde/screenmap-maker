@@ -40,7 +40,7 @@ internal static class Regression050 {
         double small=Far();vm.Update(d=>d.PrimitiveRadius=.16);Check(Far()<small-.05,"enabled primitive marker drives depth");
         vm.Update(d=>d.PrimitiveCircle=false);double disabled=Far();vm.Update(d=>d.PrimitiveRadius=.08);Check(Math.Abs(Far()-disabled)<1e-10,"disabled primitive marker does not drive depth");
         Check(Math.Abs(vm.Doc.Radius-.075)<1e-10,"primitive edits preserve perspective radius");
-        vm.Update(d=>{d.PrimitiveCircle=true;d.PrimitiveRadius=.12;foreach(var l in d.Layers)l.Visible=false;d.Layers[4].Visible=true;d.SetPrimitiveStep(2);});
+        vm.Update(d=>{d.BackgroundTransparency=1;d.PrimitiveCircle=true;d.PrimitiveRadius=.12;foreach(var l in d.Layers)l.Visible=false;d.Layers[4].Visible=true;d.SetPrimitiveStep(2);});
         string png=Path.Combine(dir,"filled.png");RenderEngine.Png(vm,png,1280,96,false);
         using(var image=SKBitmap.Decode(png))Check(image.GetPixel(image.Width/2,image.Height/2).Alpha>0,"filled centre is opaque");
         vm.Update(d=>d.PrimitiveHollow=true,false);png=Path.Combine(dir,"hollow.png");RenderEngine.Png(vm,png,1280,96,false);
@@ -56,7 +56,7 @@ internal static class Regression050 {
         var position=density.TranslatePoint(new Point(density.Bounds.Width/2,density.Bounds.Height/2),window)!.Value;
         window.MouseMove(position);window.MouseWheel(position,new Vector(0,1));Dispatcher.UIThread.RunJobs();
         Check(vm.Doc.PrimitiveStep==old+1,"wheel advances one density detent");Check(parent.Offset==offset,"wheel over slider does not scroll sidebar");
-        Reset();foreach(int layer in new[]{3,4}){
+        Reset();vm.Update(d=>d.BackgroundTransparency=1,false);foreach(int layer in new[]{3,4}){
             vm.Update(d=>{foreach(var l in d.Layers)l.Visible=false;d.Layers[layer].Visible=true;d.Layers[layer].Opacity=1;},false);
             png=Path.Combine(dir,$"only-{layer}.png");RenderEngine.Png(vm,png,1280,96,false);
             using(var image=SKBitmap.Decode(png))Check(image.Bytes.Where((_,i)=>i%4==3).Any(a=>a>0),$"layer {layer} renders independently");
@@ -64,7 +64,7 @@ internal static class Regression050 {
             using(var image=SKBitmap.Decode(png))Check(image.Bytes.Where((_,i)=>i%4==3).All(a=>a==0),$"layer {layer} opacity controls only its own contents");
         }
         Check(!vm.Scene.Lines.Any(l=>l.Layer==3)&&vm.Scene.Lines.Any(l=>l.Layer==4),"zone numbers and boundary lines have separate layers");
-        Reset();vm.Update(d=>d.Layers[1].Bounded=false,false);await Capture("depth-unbounded");
+        Reset();vm.Update(d=>{d.BackgroundTransparency=1;d.Layers[1].Bounded=false;},false);await Capture("depth-unbounded");
         // Skia flattens the dash effect into vector paths rather than dash attributes.
         var xml=XDocument.Load(Path.Combine(dir,"depth-unbounded.svg"));XNamespace ns="http://www.w3.org/2000/svg";
         var depth=xml.Root!.Elements(ns+"g").First(g=>g.Attribute("id")?.Value=="depth");

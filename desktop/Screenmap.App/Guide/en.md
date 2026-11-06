@@ -1,6 +1,6 @@
 <a id="top"></a>
 # aqorde ScreenMap Maker
-**Framing and composition guide · version 0.5.11rc (RC)**
+**Framing and composition guide · version 0.5.12rc (RC)**
 A practical guide from your first grid to a reference for AI image and video generation.
 
 ## Contents
@@ -142,15 +142,15 @@ The long side allows up to 16 divisions. Intermediate cells may be rectangular, 
 - **Centre point** enables the marker; Grid must also be visible.
 - **Size** adjusts its radius independently from Perspective radius.
 - **Hollow circle** replaces the filled dot with an outline. Lines inside retain 50% of their original opacity; cell numbers remain fully visible.
-While Centre point is enabled, depth frames follow its size. If disabled, changing the hidden marker size leaves the depth unchanged. A hollow centre remains transparent when exported; it is not a background-coloured patch.
+While Centre point is enabled, depth frames follow its size. If disabled, changing the hidden marker size leaves the depth unchanged. A hollow centre shows the selected background between the guide lines.
 [↑ Back to top](#top)
 
 <a id="background"></a>
 ## Background image
 Set a solid colour through **Settings → Appearance → Background colour**. For example `#464646` gives RGB 70/70/70.
 Choose **Picture…** in the sidebar to load a photograph. **Fill** covers the frame and crops excess image; **Fit** shows the complete image with free space where necessary.
-Picture opacity blends the photo over the solid colour: 0 shows only that colour; 100% shows the photo fully. Crop X/Y chooses which part remains visible. Cropping only has a visible effect on an axis where the scaled photo extends beyond the frame.
-Without an image, photo controls are disabled. Remove clears the current photo and can be undone. Input is limited to 64 MB and 64 million pixels.
+**Transparency** controls the entire background. At 0% it is opaque. At 100% it is fully transparent. The slider works with a solid colour alone or with a photo. Crop X/Y chooses which part of a photo remains visible on each axis where it extends beyond the frame.
+Fill, Fit and cropping require a photo. Remove clears the current photo and can be undone. Input is limited to 64 MB and 64 million pixels.
 The photo is embedded in the saved project, so the original file is not needed when you transfer it.
 [↑ Back to top](#top)
 
@@ -216,10 +216,8 @@ Projects can be transferred without the original photo. Fonts should be installe
 5. Click Export and select a destination.
 **PNG** is raster with alpha transparency. Limits are 8192 px per side and 64 million pixels total. DPI is print metadata: changing 96 to 300 DPI does not create extra image detail at the same pixel dimensions.
 **SVG** contains vector lines and glyph outlines in named groups. An included photo is embedded in the file.
-### Background picture checkbox
-- Unchecked: export visible guides on transparency; the solid background is also excluded.
-- Checked: include the photograph at its selected opacity plus the solid colour beneath it.
-- No photo: the checkbox is disabled.
+### Background
+The sidebar's **Transparency** applies to both PNG and SVG. Set it to 100% for a guide-only export. **Export with background picture** includes the loaded photo along with the solid colour beneath it. Clear the checkbox to export the solid colour alone at the selected transparency.
 The export includes current visible layers, excluding application controls and blue editing handles. To export only PGFA, leave only that layer enabled.
 [↑ Back to top](#top)
 
@@ -278,7 +276,7 @@ Zones has numbers only. Change line width in Grid instead.
 ### The sidebar does not scroll
 Move the pointer away from a slider: a hovered slider intentionally consumes wheel input.
 ### The export has no photograph
-Load a photo and check Export with background picture. Transparent exports exclude both photo and solid underlay.
+Load a photo, check **Export with background picture** and set **Transparency** below 100%.
 ### The session was not restored
 Close the main window normally and ensure its `config` directory is writable. Save a project separately if a configuration error is reported.
 ### What is not included yet?

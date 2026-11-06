@@ -9,7 +9,7 @@ A Windows tool for planning shots and creating composition references for image 
 - Compose shots with screen zones, level bands and depth planes D0–D7.
 - Move the perspective point beyond the image horizontally, or centre it again with **Perspective Reset**.
 - Switch between a boxed grid and open sky and ground planes with evenly spaced projected columns.
-- Place an image behind the guides and export transparent PNG or SVG.
+- Adjust background transparency with or without a photo and export PNG or SVG.
 - Export a matching prompt template in English or Russian.
 
 The Windows x64 release includes an installer and a portable ZIP. For the portable edition, extract the entire archive and run `ScreenmapMaker.exe`.

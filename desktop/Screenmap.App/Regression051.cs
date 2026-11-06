@@ -63,7 +63,7 @@ internal static class Regression051 {
         Check(!LabelLayout.Overlap(zone.Bounds,d1.Bounds),"original B2 D1 versus 2.2 regression");
         vm.Update(d=>{d.CenterX=.23;d.CenterY=.31;d.Radius=.045;d.PgfaDensity=2;d.Layers[0].Visible=true;});await Capture("b2-original-top-left");
         vm.Update(d=>{d.CenterX=.75;d.CenterY=.72;d.Radius=.1;});await Capture("b2-offset-right");
-        Reset();vm.Update(d=>{foreach(var l in d.Layers)l.Visible=false;d.Layers[1].Visible=true;d.Layers[1].Labels=false;d.Layers[1].Bounded=false;});
+        Reset();vm.Update(d=>{d.BackgroundTransparency=1;foreach(var l in d.Layers)l.Visible=false;d.Layers[1].Visible=true;d.Layers[1].Labels=false;d.Layers[1].Bounded=false;});
         var strokes=RenderEngine.Strokes(vm.Scene,1,false).ToArray();var solid=strokes.Where(s=>!s.Dotted).ToArray();
         Check(solid.Length==20,"open depth keeps 16 horizontals and four corner rays");
         Check(strokes.Where(s=>s.Dotted).All(s=>Math.Abs(s.Y1-s.Y2)<1e-10&&(s.X1==0||s.X2==1)),"only horizontal continuations to frame edge are dotted");
@@ -78,7 +78,7 @@ internal static class Regression051 {
         Reset();
         vm.Update(d=>{
             foreach(var layer in d.Layers)layer.Visible=false;
-            d.Layers[0].Visible=true;d.PgfaDensity=4;
+            d.BackgroundTransparency=1;d.Layers[0].Visible=true;d.PgfaDensity=4;
         });
         vm.UpdatePreferences(p=>p.QuickMenu.Add("boundDepth"));
         var quickBar=window.FindControl<WrapPanel>("QuickBar")!;
@@ -144,7 +144,7 @@ internal static class Regression051 {
         await Capture("perspective-off-left");
         vm.Update(d=>d.CenterX=1.35);
         await Capture("perspective-off-right");
-        Reset();vm.Update(d=>{d.Mode=1;d.PrimitiveCircle=true;d.PrimitiveHollow=true;d.PrimitiveRadius=.19;d.P=1;d.Q=1;d.SetPrimitiveStep(2);foreach(var l in d.Layers)l.Visible=false;d.Layers[3].Visible=true;d.Layers[3].Opacity=1;d.Layers[3].FontSize=36;d.Layers[4].Visible=true;d.Layers[4].Opacity=1;});
+        Reset();vm.Update(d=>{d.BackgroundTransparency=1;d.Mode=1;d.PrimitiveCircle=true;d.PrimitiveHollow=true;d.PrimitiveRadius=.19;d.P=1;d.Q=1;d.SetPrimitiveStep(2);foreach(var l in d.Layers)l.Visible=false;d.Layers[3].Visible=true;d.Layers[3].Opacity=1;d.Layers[3].FontSize=36;d.Layers[4].Visible=true;d.Layers[4].Opacity=1;});
         await Capture("hollow-visible-numbers");
         using(var png=SKBitmap.Decode(Path.Combine(dir,"hollow-visible-numbers-grid.png"))){
             int mid=png.Width/2;var text=from xx in Enumerable.Range(mid-15,30) from yy in Enumerable.Range(mid-20,40) select png.GetPixel(xx,yy).Alpha;

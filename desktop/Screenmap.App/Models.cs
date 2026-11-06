@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using SkiaSharp;
 namespace Screenmap.App;
 public sealed class LayerSettings {
@@ -27,7 +28,10 @@ public sealed class DocumentSettings {
     public int PgfaDensity {get;set;}=1;
     public string Background {get;set;}="#464646";
     public string? PhotoId {get;set;}
-    public double PhotoOpacity {get;set;}=1;
+    // Keep the serialized name used by existing projects and saved sessions.
+    [JsonPropertyName("PhotoOpacity")]
+    public double BackgroundOpacity {get;set;}=1;
+    internal double BackgroundTransparency {get=>1-BackgroundOpacity;set=>BackgroundOpacity=1-value;}
     public bool PhotoFill {get;set;}=true;
     public double PhotoX {get;set;}=.5;
     public double PhotoY {get;set;}=.5;
@@ -175,7 +179,7 @@ internal sealed class Editor : IDisposable {
     }
     internal static void Validate(DocumentSettings d){
         if(d.ExportPromptLanguage is not ("ru" or "en"))throw new InvalidDataException("Invalid prompt language");
-        if(d.SchemaVersion!=2||d.ZoneNumbering!="screenmap-zones-v1"||d.Layers is null||d.Layers.Length!=5||!Color(d.Background)||d.PrimitiveDensities is null||d.PrimitiveDensities.Values.Any(v=>!double.IsFinite(v)||v is <0 or >1)||d.PhotoId?.Length>100||!double.IsFinite(d.PhotoOpacity)||d.PhotoOpacity is <0 or >1||d.ExportWidth is <64 or >8192||d.ExportDpi is <36 or >1200||!double.IsFinite(d.PhotoX)||!double.IsFinite(d.PhotoY)||d.PhotoX is <0 or >1||d.PhotoY is <0 or >1)throw new InvalidDataException("Invalid project");
+        if(d.SchemaVersion!=2||d.ZoneNumbering!="screenmap-zones-v1"||d.Layers is null||d.Layers.Length!=5||!Color(d.Background)||d.PrimitiveDensities is null||d.PrimitiveDensities.Values.Any(v=>!double.IsFinite(v)||v is <0 or >1)||d.PhotoId?.Length>100||!double.IsFinite(d.BackgroundOpacity)||d.BackgroundOpacity is <0 or >1||d.ExportWidth is <64 or >8192||d.ExportDpi is <36 or >1200||!double.IsFinite(d.PhotoX)||!double.IsFinite(d.PhotoY)||d.PhotoX is <0 or >1||d.PhotoY is <0 or >1)throw new InvalidDataException("Invalid project");
         foreach(var l in d.Layers)ValidateLayer(l);
     }
     public void Dispose(){Scene.Dispose();foreach(var p in Photos.Values)p.Dispose();}

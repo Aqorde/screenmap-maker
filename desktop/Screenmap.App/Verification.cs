@@ -104,34 +104,51 @@ internal static class Verification {
         settings.Height=920;await Snapshot(settings,Path.Combine(output,"settings-appearance-tall.png"));
         settings.SelectPage(2);await Snapshot(settings,Path.Combine(output,"settings-quick-menu.png"));settings.Close();
         var palette=new ColorPalette("#4389CD",_=>{});palette.Show(window);await Snapshot(palette,Path.Combine(output,"palette.png"));palette.Close();
-        var export=new ExportWindow(vm,window);Check(!export.BackgroundOption.IsEnabled,"Background export disabled without photo");export.Show(window);await Snapshot(export,Path.Combine(output,"export-no-photo.png"));export.Close();
+        int transparencyLabel=sidebar.Children.IndexOf(sidebar.Children.OfType<TextBlock>().Single(t=>t.Text?.StartsWith("Transparency  ")==true));
+        var transparencySlider=(Slider)sidebar.Children[transparencyLabel+1];
+        Check(transparencySlider.IsEnabled&&transparencySlider.Value==0,"Background transparency starts at zero and is editable without a photo");
+        transparencySlider.Value=.5;
+        Check(vm.Doc.BackgroundOpacity==.5,"Transparency slider inversely controls the opacity of the background");
+        vm.Undo();Check(vm.Doc.BackgroundTransparency==0&&transparencySlider.Value==0,"Background transparency is undoable");
+        var export=new ExportWindow(vm,window);Check(!export.BackgroundOption.IsEnabled,"Only the photo option is disabled without photo");export.Show(window);await Snapshot(export,Path.Combine(output,"export-no-photo.png"));export.Close();
         using var imageSurface=SKSurface.Create(new SKImageInfo(640,360));
         imageSurface.Canvas.Clear(SKColors.CornflowerBlue);using(var p=new SKPaint{Color=SKColors.Gold})imageSurface.Canvas.DrawCircle(320,180,100,p);
         using var image=imageSurface.Snapshot();using var encoded=image.Encode(SKEncodedImageFormat.Png,100);
-        vm.AddPhoto(encoded.ToArray());
-        byte[]? transparentPixels=null;
-        StateStore.Atomic(Path.Combine(configDir,"background.image"),encoded.ToArray());
-        foreach(double opacity in new[]{0,.5,1.0}){
-            vm.Update(d=>{d.PhotoOpacity=opacity;foreach(var l in d.Layers)l.Visible=false;});
-            string name=opacity.ToString("0.0",System.Globalization.CultureInfo.InvariantCulture);
-            StateStore.Atomic(Path.Combine(configDir,"photo-"+name+".json"),JsonSerializer.SerializeToUtf8Bytes(new SessionState{Document=vm.Doc,Preferences=vm.Prefs,PhotoFile="background.image"},StateStore.Json));
-            await Snapshot(window,Path.Combine(output,$"photo-{name}.png"));
-            RenderEngine.Png(vm,Path.Combine(output,$"photo-export-{name}.png"),800,96,true);
-            using var decoded=SKBitmap.Decode(Path.Combine(output,$"photo-export-{name}.png"));
-            if(opacity==0){var pixel=decoded.GetPixel(400,225);Check(pixel.Red==70&&pixel.Green==70&&pixel.Blue==70,"Photo zero opacity exposes solid background");transparentPixels=decoded.Bytes;}
-            else Check(!decoded.Bytes.SequenceEqual(transparentPixels!),"Photo opacity changes image");
-        }
-        string photoSvg=Path.Combine(output,"photo-embedded.svg");RenderEngine.Svg(vm,photoSvg,800,true);
         XNamespace photoNs="http://www.w3.org/2000/svg";
-        Check(XDocument.Load(photoSvg).Descendants(photoNs+"image").Any(e=>e.Attributes().Any(a=>a.Value.StartsWith("data:image/"))),"SVG embeds background image");
-        string transparentSvg=Path.Combine(output,"photo-excluded.svg");RenderEngine.Svg(vm,transparentSvg,800,false);
-        Check(!XDocument.Load(transparentSvg).Descendants(photoNs+"image").Any(),"SVG excludes background image");
+        foreach(string mode in new[]{"solid","photo-excluded","photo-included"}){
+            if(mode=="photo-excluded")vm.AddPhoto(encoded.ToArray());
+            bool includePhoto=mode=="photo-included";
+            foreach(int percent in new[]{0,50,100}){
+                vm.Update(d=>{d.BackgroundTransparency=percent/100.0;d.P=1;d.Q=1;d.PhotoFill=false;d.ExportWidth=256;foreach(var l in d.Layers)l.Visible=false;});
+                string path=Path.Combine(output,$"background-{mode}-{percent}");
+                ExportService.Export(vm,path+".png","png",includePhoto,true,"en");
+                ExportService.Export(vm,path+".svg","svg",includePhoto,false,"en");
+                using var decoded=SKBitmap.Decode(path+".png");
+                var middle=decoded.GetPixel(128,128);
+                var matte=decoded.GetPixel(128,16);
+                int alpha=(int)Math.Round((1-percent/100.0)*255);
+                Check(Math.Abs(middle.Alpha-alpha)<=1&&Math.Abs(matte.Alpha-alpha)<=1,$"PNG applies transparency to both picture and matte: {mode} {percent}");
+                if(percent<100){
+                    Check(Math.Abs(middle.Red-(includePhoto?255:70))<=1&&Math.Abs(matte.Red-70)<=1,$"PNG retains the expected photo or colour: {mode} {percent}");
+                }
+                var group=XDocument.Load(path+".svg").Descendants(photoNs+"g").SingleOrDefault(e=>(string?)e.Attribute("id")=="background");
+                Check((group is null)==(percent==100),$"SVG emits a background only when visible: {mode} {percent}");
+                if(group is not null){
+                    Check(((double?)group.Attribute("opacity")??1)==1-percent/100.0,$"SVG applies one opacity to the entire background group: {mode} {percent}");
+                    Check(group.Descendants(photoNs+"image").Any(e=>e.Attributes().Any(a=>a.Value.StartsWith("data:image/")))==includePhoto,$"SVG embeds photo only when requested: {mode} {percent}");
+                }
+                var brief=File.ReadAllText(path+".md");
+                Check(brief.Contains(percent==100?"background is fully transparent":includePhoto?"exported background picture":"Solid guide background"),$"Prompt reflects actual background: {mode} {percent}");
+            }
+        }
         var withPhoto=new ExportWindow(vm,window);Check(withPhoto.BackgroundOption.IsEnabled,"Photo export enabled with photo");withPhoto.Show(window);await Snapshot(withPhoto,Path.Combine(output,"export-with-photo.png"));withPhoto.Close();
-        vm.Update(d=>{d.Layers[1].Visible=true;d.Layers[3].Visible=true;d.PhotoOpacity=.55;d.Mode=1;});
+        vm.Update(d=>{d.Layers[1].Visible=true;d.Layers[3].Visible=true;d.BackgroundOpacity=.55;d.Mode=1;});
         string project=Path.Combine(output,"roundtrip.screenmap");StateStore.SaveProject(project,vm);
         using var other=new Editor();StateStore.OpenProject(project,other);
         Check(other.Photo is not null&&other.Photo.Bytes.SequenceEqual(vm.Photo!.Bytes),"Embedded photo roundtrip");
-        Check(other.Doc.PhotoOpacity==.55&&other.Doc.Mode==1,"Document roundtrip");
+        Check(other.Doc.BackgroundOpacity==.55&&other.Doc.Mode==1,"Document roundtrip");
+        var legacyOpacity=JsonSerializer.Deserialize<DocumentSettings>("""{"PhotoOpacity":0.25}""");
+        Check(legacyOpacity?.BackgroundTransparency==.75,"Existing PhotoOpacity values load on the inverted transparency scale");
         vm.UpdatePreferences(p=>{p.Language="ru";p.Theme="Light";p.BaseSize=16;p.QuickMenu=["orientation","layer1","export"];});
         vm.SaveTheme("Custom test");vm.Update(d=>d.Layers[1].Color="#123456",false);vm.SaveTheme("Custom test");
         Check(vm.Prefs.ScreenmapThemes.Count(t=>t.Name=="Custom test")==1&&vm.Prefs.ScreenmapThemes.First(t=>t.Name=="Custom test").Layers[1].Color=="#123456","Custom theme updates in place");
@@ -139,7 +156,7 @@ internal static class Verification {
         using var restored=new Editor();var session=StateStore.LoadSession(sessionDir,restored);
         Check(session is not null&&restored.Prefs.Language=="ru"&&restored.Prefs.Theme=="Light"&&restored.Prefs.BaseSize==16,"Preferences restored");
         Check(restored.Prefs.QuickMenu.SequenceEqual(vm.Prefs.QuickMenu)&&restored.Prefs.ScreenmapThemes.Any(t=>t.Name=="Custom test"),"Quick menu and custom theme restored");
-        Check(restored.Photo is not null&&restored.Doc.PhotoOpacity==.55,"Background restored");
+        Check(restored.Photo is not null&&restored.Doc.BackgroundOpacity==.55,"Background restored");
         var closeEditor=new Editor();closeEditor.UpdatePreferences(p=>{p.Language="en";p.Theme="Dark";p.QuickMenu=["orientation"];});closeEditor.Update(d=>d.Radius=.14);
         string closeDir=Path.Combine(output,"normal-close");
         var closeWindow=new MainWindow(closeEditor,closeDir,false);closeWindow.Show(window);closeWindow.Close();
@@ -149,7 +166,7 @@ internal static class Verification {
         vm.Update(d=>{d.P=3;d.Q=4;d.PrimitiveDensities["3:4"]=.8;});
         vm.Update(d=>{d.P=16;d.Q=9;});
         Check(vm.Doc.PrimitiveDensities["16:9"]==.1&&vm.Doc.PrimitiveDensities["3:4"]==.8,"Primitive density is independent per AR");
-        vm.Replace(new DocumentSettings());vm.UpdatePreferences(p=>{p.Language="en";p.Theme="Dark";p.BaseSize=14;});
+        vm.Replace(new DocumentSettings());vm.Update(d=>d.BackgroundTransparency=1,false);vm.UpdatePreferences(p=>{p.Language="en";p.Theme="Dark";p.BaseSize=14;});
         var a=Path.Combine(output,"dpi-96.png");var b=Path.Combine(output,"dpi-300.png");
         RenderEngine.Png(vm,a,800,96,false);RenderEngine.Png(vm,b,800,300,false);
         using var ba=SKBitmap.Decode(a);using var bb=SKBitmap.Decode(b);
@@ -164,7 +181,7 @@ internal static class Verification {
         using var old=new Editor();StateStore.OpenProject(legacy,old);
         Check(old.Doc.SchemaVersion==2&&old.Scene.Config.Abi==2,"Legacy v0.3 projects migrate");
         Check(old.Doc.Layers[1].FontSize==24&&old.Doc.Layers[1].Shift,"Legacy captions receive v0.4 defaults");Check(ba.Bytes.SequenceEqual(bb.Bytes),"DPI does not change pixels");
-        Check(ba.Bytes.Where((_,i)=>i%4==3).Any(v=>v==0),"PNG alpha");
+        Check(ba.Bytes.Where((_,i)=>i%4==3).Any(v=>v==0)&&ba.Bytes.Where((_,i)=>i%4==3).Any(v=>v>0),"Transparent background retains visible grid pixels");
         string svg=Path.Combine(output,"verified.svg");RenderEngine.Svg(vm,svg,800,false);XNamespace ns="http://www.w3.org/2000/svg";var xml=XDocument.Load(svg);
         Check(xml.Root?.Attribute("viewBox")?.Value=="0 0 800 450","SVG dimensions");
         Check(xml.Descendants(ns+"g").Any(g=>g.Attribute("id")?.Value=="depth"),"SVG named layers");

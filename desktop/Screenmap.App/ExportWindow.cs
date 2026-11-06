@@ -20,7 +20,6 @@ internal sealed class ExportWindow:FloatingWindow {
         panel.Children.Add(UI.Row(UI.Text("DPI · PNG"),UI.Number(vm.Doc.ExportDpi,36,1200,v=>vm.Update(d=>d.ExportDpi=(int)v,false))));
         BackgroundOption=UI.Check(UI.L(vm,"Export with background picture","Экспорт с фоновым изображением"),vm.Photo is not null&&vm.Doc.ExportBackground,v=>vm.Update(d=>d.ExportBackground=v,false));
         BackgroundOption.IsEnabled=vm.Photo is not null;panel.Children.Add(BackgroundOption);
-        panel.Children.Add(UI.Text(UI.L(vm,"Unchecked: transparent PNG/SVG. Size follows the aspect ratio.","Без галочки: прозрачный PNG/SVG. Высота следует формату кадра.")));
         PromptOption=UI.Check(UI.L(vm,"Export with prompt template","Экспортировать с шаблоном промпта"),vm.Doc.ExportPrompt,v=>{vm.Update(d=>d.ExportPrompt=v,false);if(PromptLanguage is not null)PromptLanguage.IsEnabled=v;});
         PromptLanguage=UI.Select(["Русский","English"],vm.Doc.ExportPromptLanguage=="en"?1:0,i=>vm.Update(d=>d.ExportPromptLanguage=i==0?"ru":"en",false));
         PromptLanguage.IsEnabled=PromptOption.IsChecked==true;PromptLanguage.MinWidth=110;

@@ -47,8 +47,14 @@ internal static class PromptTemplate {
             $"- Формат: **{d.P}:{d.Q}**, **{size.W} × {size.H} px**; режим: **{(d.Mode==0?"Перспектива":"Простая сетка")}**."));
         if(d.Mode==0)b.AppendLine(L($"- Vanishing point: x={N(d.CenterX*100)}%, y={N(d.CenterY*100)}% from the top-left corner; central-zone radius {N(d.Radius*100)}% of the short side.",
             $"- Точка схода: x={N(d.CenterX*100)}%, y={N(d.CenterY*100)}% от верхнего левого угла; радиус центральной зоны {N(d.Radius*100)}% короткой стороны."));
-        b.AppendLine(background?L("- The exported background picture is part of the reference. Describe below what to retain or replace.","- Экспортированный фон входит в референс. Ниже укажи, что сохранить или заменить."):
-            L("- Transparent guide export; the canvas preview colour is not a scene requirement.","- Экспортирована прозрачная сетка; цвет подложки в приложении не задаёт цвет сцены."));
+        string transparency=N(d.BackgroundTransparency*100);
+        b.AppendLine(d.BackgroundOpacity==0
+            ? L("- The exported background is fully transparent.","- Фон экспортирован полностью прозрачным.")
+            : background&&vm.Photo is not null
+                ? L($"- The exported background picture is part of the reference ({transparency}% transparency). Describe below what to retain or replace.",
+                    $"- Экспортированное фоновое фото входит в референс (прозрачность {transparency}%). Ниже укажи, что сохранить или заменить.")
+                : L($"- Solid guide background: {d.Background}, {transparency}% transparency. This colour is a guide and does not define the scene.",
+                    $"- Однотонная подложка карты: {d.Background}, прозрачность {transparency}%. Цвет подложки служит ориентиром и не задаёт цвет сцены."));
         b.AppendLine().AppendLine(L("| Layer | Exported | Colour | Opacity | Labels enabled |","| Слой | Экспортирован | Цвет | Непрозрачность | Подписи включены |")).AppendLine("| --- | --- | --- | --- | --- |");
         string[] en=["PGFA","Depth","Levels","Zones (IDs)","Grid (lines)"];
         string[] russian=["ОППС","Глубина","Уровни","Зоны (номера)","Сетка (линии)"];
